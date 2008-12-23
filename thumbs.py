@@ -1,0 +1,129 @@
+# -*- encoding: utf-8 -*-
+"""
+django-thumbnails by Antonio Melé
+http://django.es
+"""
+
+
+from django.db.models import ImageField
+from django.db.models.fields.files import ImageFieldFile
+from PIL import Image
+from django.core.files.base import ContentFile
+import cStringIO
+
+def generate_thumb(img, thumb_size, format):
+    img.seek(0) # see http://code.djangoproject.com/ticket/8222 for details
+    image = Image.open(img)
+    
+    # Convert to RGB if necessary
+    if image.mode not in ('L', 'RGB'):
+        image = image.convert('RGB')
+        
+    # get size
+    thumb_w, thumb_h = thumb_size
+    # If you want to generate a square thumbnail
+    if thumb_w == thumb_h:
+        # quad
+        xsize, ysize = image.size
+        # get minimum size
+        minsize = min(xsize,ysize)
+        # largest square possible in the image
+        xnewsize = (xsize-minsize)/2
+        ynewsize = (ysize-minsize)/2
+        # crop it
+        image2 = image.crop((xnewsize, ynewsize, xsize-xnewsize, ysize-ynewsize))
+        # load is necessary after crop                
+        image2.load()
+        # thumbnail of the cropped image (with ANTIALIAS to make it look better)
+        image2.thumbnail(thumb_size, Image.ANTIALIAS)
+    else:
+        # not quad
+        image2 = image
+        image2.thumbnail(thumb_size, Image.ANTIALIAS)
+    
+    io = cStringIO.StringIO()
+    # PNG and GIF are the same, JPG is JPEG
+    if format.upper()=='JPG':
+        format = 'JPEG'
+    
+    image2.save(io, format)
+    return ContentFile(io.getvalue())    
+
+class ImageWithThumbsFieldFile(ImageFieldFile):
+    """
+    usage:
+    model.field_name.url
+    model.field_name.url_125x125
+    model.field_name.url_600x400
+    """
+    def __init__(self, *args, **kwargs):
+        super(ImageWithThumbsFieldFile, self).__init__(*args, **kwargs)
+        self.sizes = self.field.sizes
+        
+        if self.sizes:
+            def get_size(self, size):
+                if not self:
+                    return ''
+                else:
+                    split = self.url.rsplit('.',1)
+                    thumb_url = '%s.%sx%s.%s' % (split[0],w,h,split[1])
+                    return thumb_url
+                    
+            for size in self.sizes:
+                (w,h) = size
+                setattr(self, 'url_%sx%s' % (w,h), get_size(self, size))
+                
+    def save(self, name, content, save=True):
+        """
+        name = self.field.generate_filename(self.instance, name)
+        self._name = self.storage.save(name, content)
+        setattr(self.instance, self.field.name, self.name)
+        # Update the filesize cache 
+        self._size = len(content) 
+        
+        # Save the object because it has changed, unless save is False 
+        if save: 
+            self.instance.save() 
+        <<<save.alters_data = True
+        """
+        super(ImageWithThumbsFieldFile, self).save(name, content, save)
+        
+        if self.sizes:
+            for size in self.sizes:
+                (w,h) = size
+                split = self._name.rsplit('.',1)
+                thumb_name = '%s.%sx%s.%s' % (split[0],w,h,split[1])
+                
+                # here goes your thumbnailing function
+                thumb_content = generate_thumb(content, size, split[1])
+                
+                
+                thumb_name_ = self.storage.save(thumb_name, thumb_content)        
+                
+                if not thumb_name == thumb_name_:
+                    raise ValueError('There is already a file named %s' % thumb_name)
+        
+    def delete(self, save=True):
+        super(ImageWithThumbsFieldFile, self).delete(save)
+                        
+class ImageWithThumbsField(ImageField):
+    attr_class = ImageWithThumbsFieldFile
+    """
+    sizes=((125,125),(600,400), ...)
+    """
+    def __init__(self, verbose_name=None, name=None, width_field=None, height_field=None, sizes=None, **kwargs):
+        self.verbose_name=verbose_name
+        self.name=name
+        self.width_field=width_field
+        self.height_field=height_field
+        self.sizes = sizes
+        super(ImageField, self).__init__(**kwargs)
+    """    
+    def contribute_to_class(self, cls, name):
+         super(ImageField, self).contribute_to_class(cls, name)
+    """
+    def save_file(self, *args, **kwargs):
+        super(ImageField, self).save_file(*args, **kwargs)
+
+    def delete_file(self, *args, **kwargs):
+        super(ImageField, self).delete_file(*args, **kwargs)
