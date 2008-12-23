@@ -74,18 +74,6 @@ class ImageWithThumbsFieldFile(ImageFieldFile):
                 setattr(self, 'url_%sx%s' % (w,h), get_size(self, size))
                 
     def save(self, name, content, save=True):
-        """
-        name = self.field.generate_filename(self.instance, name)
-        self._name = self.storage.save(name, content)
-        setattr(self.instance, self.field.name, self.name)
-        # Update the filesize cache 
-        self._size = len(content) 
-        
-        # Save the object because it has changed, unless save is False 
-        if save: 
-            self.instance.save() 
-        <<<save.alters_data = True
-        """
         super(ImageWithThumbsFieldFile, self).save(name, content, save)
         
         if self.sizes:
@@ -104,7 +92,17 @@ class ImageWithThumbsFieldFile(ImageFieldFile):
                     raise ValueError('There is already a file named %s' % thumb_name)
         
     def delete(self, save=True):
+        name=self.name
         super(ImageWithThumbsFieldFile, self).delete(save)
+        if self.sizes:
+            for size in self.sizes:
+                (w,h) = size
+                split = name.rsplit('.',1)
+                thumb_name = '%s.%sx%s.%s' % (split[0],w,h,split[1])
+                try:
+                    self.storage.delete(thumb_name)
+                except:
+                    pass
                         
 class ImageWithThumbsField(ImageField):
     attr_class = ImageWithThumbsFieldFile
@@ -118,12 +116,3 @@ class ImageWithThumbsField(ImageField):
         self.height_field=height_field
         self.sizes = sizes
         super(ImageField, self).__init__(**kwargs)
-    """    
-    def contribute_to_class(self, cls, name):
-         super(ImageField, self).contribute_to_class(cls, name)
-    """
-    def save_file(self, *args, **kwargs):
-        super(ImageField, self).save_file(*args, **kwargs)
-
-    def delete_file(self, *args, **kwargs):
-        super(ImageField, self).delete_file(*args, **kwargs)
