@@ -66,9 +66,8 @@ class ImageWithThumbsFieldFile(ImageFieldFile):
     """
     def __init__(self, *args, **kwargs):
         super(ImageWithThumbsFieldFile, self).__init__(*args, **kwargs)
-        self.sizes = self.field.sizes
         
-        if self.sizes:
+        if self.field.sizes:
             def get_size(self, size):
                 if not self:
                     return ''
@@ -77,15 +76,15 @@ class ImageWithThumbsFieldFile(ImageFieldFile):
                     thumb_url = '%s.%sx%s.%s' % (split[0],w,h,split[1])
                     return thumb_url
                     
-            for size in self.sizes:
+            for size in self.field.sizes:
                 (w,h) = size
                 setattr(self, 'url_%sx%s' % (w,h), get_size(self, size))
                 
     def save(self, name, content, save=True):
         super(ImageWithThumbsFieldFile, self).save(name, content, save)
         
-        if self.sizes:
-            for size in self.sizes:
+        if self.field.sizes:
+            for size in self.field.sizes:
                 (w,h) = size
                 split = self._name.rsplit('.',1)
                 thumb_name = '%s.%sx%s.%s' % (split[0],w,h,split[1])
@@ -101,8 +100,8 @@ class ImageWithThumbsFieldFile(ImageFieldFile):
     def delete(self, save=True):
         name=self.name
         super(ImageWithThumbsFieldFile, self).delete(save)
-        if self.sizes:
-            for size in self.sizes:
+        if self.field.sizes:
+            for size in self.field.sizes:
                 (w,h) = size
                 split = name.rsplit('.',1)
                 thumb_name = '%s.%sx%s.%s' % (split[0],w,h,split[1])
