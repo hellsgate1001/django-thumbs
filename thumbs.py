@@ -7,7 +7,6 @@ from django.db.models import ImageField
 from django.db.models.fields.files import ImageFieldFile
 from PIL import Image
 from django.core.files.base import ContentFile
-from django.core.files import File
 import cStringIO
 
 def generate_thumb(img, thumb_size, format):
@@ -91,10 +90,8 @@ class ImageWithThumbsFieldFile(ImageFieldFile):
                 split = self._name.rsplit('.',1)
                 thumb_name = '%s.%sx%s.%s' % (split[0],w,h,split[1])
                 
-                workfile = open(self.path,"rb")
                 # you can use another thumbnailing function if you like
-                thumb_content = generate_thumb(workfile, size, split[1])
-                workfile.close()
+                thumb_content = generate_thumb(content, size, split[1])
                 
                 thumb_name_ = self.storage.save(thumb_name, thumb_content)        
                 
