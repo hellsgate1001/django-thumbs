@@ -86,7 +86,7 @@ class ImageWithThumbsFieldFile(ImageFieldFile):
         if self.field.sizes:
             for size in self.field.sizes:
                 (w,h) = size
-                split = self._name.rsplit('.',1)
+                split = self.name.rsplit('.',1)
                 thumb_name = '%s.%sx%s.%s' % (split[0],w,h,split[1])
                 
                 # you can use another thumbnailing function if you like
