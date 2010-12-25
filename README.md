@@ -2,7 +2,7 @@
 
 ##The easiest way to create thumbnails for your images with Django. Works with any StorageBackend.
 
-Esta página también está disponible en [español](http://code.google.com/p/django-thumbs/wiki/Spanish)
+Esta p√°gina tambi√©n est√° disponible en [espa√±ol](http://code.google.com/p/django-thumbs/wiki/Spanish)
 
 ###Features
 
