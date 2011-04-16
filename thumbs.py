@@ -16,7 +16,8 @@ import math
 
 def generate_thumb(img, thumb_size, format):
     """
-    Generates a thumbnail image and returns a ContentFile object with the thumbnail
+    Generates a thumbnail image and returns a ContentFile object with the
+    thumbnail
 
     Parameters:
     ===========
@@ -47,10 +48,12 @@ def generate_thumb(img, thumb_size, format):
         xnewsize = (xsize - minsize) / 2
         ynewsize = (ysize - minsize) / 2
         # crop it
-        image2 = image.crop((xnewsize, ynewsize, xsize - xnewsize, ysize - ynewsize))
+        image2 = image.crop(xnewsize, ynewsize, xsize - xnewsize,\
+            ysize - ynewsize)
         # load is necessary after crop
         image2.load()
-        # thumbnail of the cropped image (with ANTIALIAS to make it look better)
+        # thumbnail of the cropped image
+        # (with ANTIALIAS to make it look better)
         image2.thumbnail(thumb_size, Image.ANTIALIAS)
     else:
         # Compare the ratio of the original image with the ratio of the
@@ -65,11 +68,13 @@ def generate_thumb(img, thumb_size, format):
         elif thumb_ratio > image_ratio:
             idealy = math.ceil(xsize / thumb_ratio)
             y_crop_offset = (ysize - idealy) / 2
-            image2 = image.crop((0, 0+y_crop_offset, xsize, idealy+y_crop_offset))
+            image2 = image.crop(0, 0 + y_crop_offset, xsize,\
+                idealy + y_crop_offset)
         else:
             idealx = math.ceil(ysize * thumb_ratio)
             x_crop_offset = (xsize - idealx) / 2
-            image2 = image.crop((0 + x_crop_offset,0,idealx + x_crop_offset, ysize))
+            image2 = image.crop(0 + x_crop_offset, 0, idealx + x_crop_offset,\
+                ysize)
         image2.thumbnail(thumb_size, Image.ANTIALIAS)
 
     io = cStringIO.StringIO()
@@ -116,7 +121,8 @@ class ImageWithThumbsFieldFile(ImageFieldFile):
                 thumb_name_ = self.storage.save(thumb_name, thumb_content)
 
                 if not thumb_name == thumb_name_:
-                    raise ValueError('There is already a file named %s' % thumb_name)
+                    raise ValueError('There is already a file named %s'\
+                        % thumb_name)
 
     def delete(self, save=True):
         name = self.name
@@ -137,7 +143,8 @@ class ImageWithThumbsField(ImageField):
     """
     Usage example:
     ==============
-    photo = ImageWithThumbsField(upload_to='images', sizes=((125,125),(300,200),)
+    photo = ImageWithThumbsField(upload_to='images',\
+        sizes=((125,125),(300,200),)
 
     To retrieve image URL, exactly the same way as with ImageField:
         my_object.photo.url
@@ -155,28 +162,32 @@ class ImageWithThumbsField(ImageField):
 
     available_filename.[width]x[height].extension
 
-    Where 'available_filename' is the available filename returned by the storage
-    backend for saving the original file.
+    Where 'available_filename' is the available filename returned by the
+    storage backend for saving the original file.
 
-    Following the usage example above: For storing a file called "photo.jpg" it saves:
+    Following the usage example above: For storing a file called "photo.jpg"
+    it saves:
     photo.jpg          (original file)
     photo.125x125.jpg  (first thumbnail)
     photo.300x200.jpg  (second thumbnail)
 
-    With the default storage backend if photo.jpg already exists it will use these filenames:
+    With the default storage backend if photo.jpg already exists it will use
+    these filenames:
     photo_.jpg
     photo_.125x125.jpg
     photo_.300x200.jpg
 
-    Note: django-thumbs assumes that if filename "any_filename.jpg" is available
-    filenames with this format "any_filename.[widht]x[height].jpg" will be available, too.
+    Note: django-thumbs assumes that if filename "any_filename.jpg" is
+    available filenames with this format "any_filename.[widht]x[height].jpg"
+    will be available, too.
 
     To do:
     ======
     Add method to regenerate thubmnails
 
     """
-    def __init__(self, verbose_name=None, name=None, width_field=None, height_field=None, sizes=None, **kwargs):
+    def __init__(self, verbose_name=None, name=None, width_field=None,\
+        height_field=None, sizes=None, **kwargs):
         self.verbose_name = verbose_name
         self.name = name
         self.width_field = width_field
