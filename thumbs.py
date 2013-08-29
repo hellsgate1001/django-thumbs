@@ -39,43 +39,32 @@ def generate_thumb(img, thumb_size, format):
     # get size
     thumb_w, thumb_h = thumb_size
     xsize, ysize = image.size
-    # If you want to generate a square thumbnail
-    if thumb_w == thumb_h:
-        # quad
-        # get minimum size
-        minsize = min(xsize, ysize)
-        # largest square possible in the image
-        xnewsize = (xsize - minsize) / 2
-        ynewsize = (ysize - minsize) / 2
-        # crop it
-        image2 = image.crop(xnewsize, ynewsize, xsize - xnewsize,\
-            ysize - ynewsize)
-        # load is necessary after crop
+
+    thumb_ratio = float(thumb_w) / float(thumb_h)
+    image_ratio = float(xsize) / float(ysize)
+
+    if thumb_ratio > image_ratio:
+        # The cropped image will be 'slimmer', meaning that at the same
+        # aspect ratio the original image would be shorter
+        # Calulate what the height of the actual image would be using the
+        # same aspect ratio as requested for this thumbnail
+        actual_resize_height = int(math.ceil(xsize / thumb_ratio))
+        y_crop_offset = ((ysize - actual_resize_height) / 2)
+        image2 = image.crop((0, y_crop_offset, xsize, (y_crop_offset + actual_resize_height)))
         image2.load()
-        # thumbnail of the cropped image
-        # (with ANTIALIAS to make it look better)
-        image2.thumbnail(thumb_size, Image.ANTIALIAS)
+    elif image_ratio > thumb_ratio:
+        # The cropped image will be 'wider'
+
+        # Calculate what the width of the actual image would be using the
+        # same aspect ratio as requested for this thumbnail
+        actual_resize_width = int(math.ceil(ysize * thumb_ratio))
+        x_crop_offset = ((xsize - actual_resize_width) / 2);
+        image2 = image.crop((x_crop_offset, 0, (x_crop_offset + actual_resize_width), ysize))
+        image2.load()
     else:
-        # Compare the ratio of the original image with the ratio of the
-        # required resize. Do a straight resize if they are equal, otherwise
-        # perform a zoom crop
-        # The zoom crop doesn't use 0,0 as it's anchor, it crops an equal
-        # amount from either end of the image, leaving the centre uncropped
-        thumb_ratio = float(thumb_w) / float(thumb_h)
-        image_ratio = float(xsize) / float(ysize)
-        if thumb_ratio == image_ratio:
-            image2 = image
-        elif thumb_ratio > image_ratio:
-            idealy = math.ceil(xsize / thumb_ratio)
-            y_crop_offset = (ysize - idealy) / 2
-            image2 = image.crop(0, 0 + y_crop_offset, xsize,\
-                idealy + y_crop_offset)
-        else:
-            idealx = math.ceil(ysize * thumb_ratio)
-            x_crop_offset = (xsize - idealx) / 2
-            image2 = image.crop(0 + x_crop_offset, 0, idealx + x_crop_offset,\
-                ysize)
-        image2.thumbnail(thumb_size, Image.ANTIALIAS)
+        image2 = image
+
+    image2.thumbnail(thumb_size, Image.ANTIALIAS)
 
     io = cStringIO.StringIO()
     # PNG and GIF are the same, JPG is JPEG
